@@ -134,7 +134,7 @@ with tab2:
         fig_dens, ax_dens = plt.subplots(figsize=(7, 4.5))
         # Use live_results_df so the chart updates when sliders move!
         density_by_cat = live_results_df.groupby("Disease_Category")["Vascular_Density_%"].mean().sort_values()
-        density_by_cat.plot(kind="barh", color="#d95f02", ax=ax_dens)
+        density_by_cat.plot(kind="barh", color="#d411cd", ax=ax_dens)
         ax_dens.set_xlabel("Mean Vascular Density (%)")
         ax_dens.set_ylabel("")
         plt.tight_layout()

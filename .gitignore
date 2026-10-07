@@ -1,0 +1,31 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# Streamlit & IDE Configs
+.streamlit/secrets.toml
+.vscode/
+.idea/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+data/images/*.ppm
+data/labels/*.ppm
+data/labels_ah/*.ppm
+outputs/*.png

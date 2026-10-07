@@ -1,0 +1,21 @@
+Patient_ID,Disease_Category,Vascular_Density_%,Pixel_Accuracy_%,Dice_Score,Sensitivity_%,Primary_Diagnosis
+im0001,Diabetic Retinopathy,7.56,95.54,0.7212,68.29,Background Diabetic Retinopathy
+im0002,Other Retinal Pathology,6.04,94.63,0.6563,53.49,Choroidal Neovascularization AND Arteriosclerotic Retinopathy
+im0003,Macular Degeneration,9.58,94.58,0.6903,76.22,Drusen | large AND Geographic Atrophy RPE
+im0004,Retinal Vascular Occlusion,5.13,93.29,0.5649,42.35,Cilio-Retinal Artery Occlusion OR Central Retinal Artery Occlusion
+im0005,Retinal Vascular Occlusion,9.83,93.21,0.7112,61.12,Central Retinal Artery Occlusion AND Central Retinal Vein Occlusion
+im0044,Other Retinal Pathology,8.19,95.78,0.7484,73.2,Retinitis | Disease
+im0077,Normal / Healthy,7.94,95.8,0.7488,71.35,Normal AND Hypertensive Retinopathy | How could it be
+im0081,Normal / Healthy,7.04,96.68,0.7705,75.04,Normal
+im0082,Normal / Healthy,6.09,96.18,0.7259,64.39,Normal
+im0139,Diabetic Retinopathy,12.33,92.55,0.6693,73.86,Background Diabetic Retinopathy
+im0162,Normal / Healthy,7.83,95.12,0.7365,63.82,Normal
+im0163,Normal / Healthy,10.0,95.76,0.8053,74.49,Normal
+im0235,Normal / Healthy,8.42,94.51,0.7319,62.09,Normal
+im0236,Normal / Healthy,8.58,94.33,0.7318,61.59,Normal
+im0239,Normal / Healthy,6.25,95.13,0.6841,57.53,Normal
+im0240,Normal / Healthy,7.97,92.37,0.6591,51.18,Normal
+im0255,Normal / Healthy,5.25,93.97,0.6105,46.16,Normal
+im0291,Other Retinal Pathology,3.62,95.93,0.6294,46.93,Vasculitis
+im0319,Other Retinal Pathology,3.03,96.94,0.599,49.77,Emboli | Non-Hollenhorst
+im0324,Other Retinal Pathology,8.25,94.08,0.6784,61.49,Hollenhorst Plaque

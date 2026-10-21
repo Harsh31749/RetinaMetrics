@@ -35,10 +35,11 @@ st.markdown("**Dataset:** STARE (Structured Analysis of the Retina) | **Pipeline
 
 # --- RENDER TOP KPIs DYNAMICALLY ---
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Benchmark Scans Evaluated", f"{len(live_results_df)} Scans")
+# Update your column metrics to use the new names
+col1.metric("Mean Vascular Density", f"{live_results_df['Vascular_Density_%'].mean():.2f}%")
 col2.metric("Mean Pixel Accuracy", f"{live_results_df['Pixel_Accuracy_%'].mean():.2f}%")
-col3.metric("Mean Dice Similarity", f"{live_results_df['Dice_Score'].mean():.4f}")
-col4.metric("Mean Vascular Density", f"{live_results_df['Vascular_Density_%'].mean():.2f}%")
+col3.metric("Mean F1 (Dice) Score", f"{live_results_df['F1_Score'].mean():.4f}")
+col4.metric("Mean IoU Score", f"{live_results_df['IoU_Score'].mean():.4f}") # (Optional) Add a 4th column for IoU
 tab1, tab2 = st.tabs([
     "Tab 1: Patient Scan & Live Segmentation Inspector",
     "Tab 2: Clinical EHR & Cohort Visual Analytics"
@@ -74,15 +75,15 @@ with tab1:
     row_idx = live_results_df.index[live_results_df['Patient_ID'] == selected_pid].tolist()[0]
     live_results_df.at[row_idx, 'Vascular_Density_%'] = live_metrics['Vascular_Density_%']
     live_results_df.at[row_idx, 'Pixel_Accuracy_%'] = live_metrics['Pixel_Accuracy_%']
-    live_results_df.at[row_idx, 'Dice_Score'] = live_metrics['Dice_Score']
-    live_results_df.at[row_idx, 'Sensitivity_%'] = live_metrics['Sensitivity_%']
+    live_results_df.at[row_idx, 'F1_Score'] = live_metrics['F1_Score']
+    live_results_df.at[row_idx, 'Recall_%'] = live_metrics['Recall_%']
 
     st.subheader(f"Patient Record: `{selected_pid}`")
     info_col1, info_col2, info_col3, info_col4 = st.columns([2.2, 1, 1, 1])
     info_col1.info(f"**Clinical EHR Diagnosis:** {patient_row['Primary_Diagnosis']}  \n**Category:** {patient_row['Disease_Category']}")
     info_col2.metric("Live Vascular Density", f"{live_metrics['Vascular_Density_%']:.2f}%")
     info_col3.metric("Live Pixel Accuracy", f"{live_metrics['Pixel_Accuracy_%']:.2f}%")
-    info_col4.metric("Live Dice / Sensitivity", f"{live_metrics['Dice_Score']:.3f} / {live_metrics['Sensitivity_%']:.2f}%")
+    info_col4.metric("Live Dice / Sensitivity", f"{live_metrics['F1_Score']:.3f} / {live_metrics['Recall_%']:.2f}%")
 
     # Create validation overlay (Green = Match, Red = Missed Vessel, Blue = Over-segmented)
     overlay = np.zeros((*pred_mask.shape, 3), dtype=np.float32)
@@ -146,13 +147,15 @@ with tab2:
     def highlight_selected(row):
         return ['background-color: #2b5c8f' if row['Patient_ID'] == selected_pid else '' for _ in row]
     
+# Format the table to show the new precision, recall, and IoU columns
     styled_df = live_results_df.style.apply(highlight_selected, axis=1).format({
-            "Vascular_Density_%": "{:.2f}",
-            "Pixel_Accuracy_%": "{:.2f}",
-            "Precision_%": "{:.2f}",
-            "Recall_%": "{:.2f}",
-            "F1_Score": "{:.4f}",
-            "IoU_Score": "{:.4f}"
+        "Vascular_Density_%": "{:.2f}",
+        "Pixel_Accuracy_%": "{:.2f}",
+        "Precision_%": "{:.2f}",
+        "Recall_%": "{:.2f}",
+        "F1_Score": "{:.4f}",
+        "IoU_Score": "{:.4f}"
     })
+
+    st.dataframe(styled_df, use_container_width=True, height=400)
     
-    st.dataframe(styled_df, use_container_width=True)

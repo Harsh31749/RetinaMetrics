@@ -71,7 +71,7 @@ def segment_vessels(img, clip_limit=0.03, max_sigma=4, min_size=80):
     green = img[:, :, 1]
     h, w = green.shape
 
-    # Strict circular + intensity Field-of-View (FOV) mask (removes top/bottom border streaks)
+    # Strict circular + intensity Field-of-View (FOV) mask
     yy, xx = np.ogrid[:h, :w]
     center_y, center_x = h / 2.0, w / 2.0
     radius = min(h, w) * 0.46
@@ -80,10 +80,15 @@ def segment_vessels(img, clip_limit=0.03, max_sigma=4, min_size=80):
     fov_mask = (green > 38) & circle_mask
     fov_mask = morphology.binary_erosion(fov_mask, morphology.disk(10))
 
-    # CLAHE Local Contrast Enhancement
-    clahe = exposure.equalize_adapthist(green, clip_limit=clip_limit)
+    # OPTIMIZATION: Black Top-Hat Transform to increase Precision, Recall, F1, and IoU
+    green_tophat = morphology.black_tophat(green, morphology.disk(15))
+    # Subtracting the top-hat output deepens the dark vessels while flattening background lighting
+    enhanced_green = np.clip(green.astype(np.int16) - green_tophat.astype(np.int16), 0, 255).astype(np.uint8)
 
-    # Suppress ultra-bright yellow exudates before filtering so their edges don't trigger false vessels
+    # CLAHE Local Contrast Enhancement (Now using the enhanced_green)
+    clahe = exposure.equalize_adapthist(enhanced_green, clip_limit=clip_limit)
+
+    # Suppress ultra-bright yellow exudates
     filled = clahe.copy()
     if fov_mask.sum() > 0:
         median_bg = np.median(clahe[fov_mask])
@@ -113,25 +118,32 @@ def segment_vessels(img, clip_limit=0.03, max_sigma=4, min_size=80):
     return green, clahe, vesselness, binary_mask, fov_mask
 
 def evaluate_scan(pred_mask, gt_mask, fov_mask):
-    """Calculates Vascular Density, Pixel Accuracy, Sensitivity, and Dice Score."""
-    fov_pixels = max(1, fov_mask.sum())
-    vascular_density = (pred_mask[fov_mask].sum() / fov_pixels) * 100
-
     gt_bin = (gt_mask > 0) & fov_mask
-    tp = np.logical_and(pred_mask, gt_bin).sum()
-    tn = np.logical_and(~pred_mask & fov_mask, ~gt_bin & fov_mask).sum()
-    fp = np.logical_and(pred_mask, ~gt_bin).sum()
-    fn = np.logical_and(~pred_mask & fov_mask, gt_bin).sum()
-
-    dice = (2.0 * tp) / (2.0 * tp + fp + fn + 1e-8)
-    accuracy = ((tp + tn) / fov_pixels) * 100
-    sensitivity = (tp / (tp + fn + 1e-8)) * 100
-
+    pred_bin = pred_mask & fov_mask
+    
+    # Calculate True Positives, False Positives, False Negatives
+    TP = np.sum((pred_bin == True) & (gt_bin == True))
+    FP = np.sum((pred_bin == True) & (gt_bin == False))
+    FN = np.sum((pred_bin == False) & (gt_bin == True))
+    TN = np.sum((pred_bin == False) & (gt_bin == False))
+    
+    # Core Metrics
+    precision = TP / (TP + FP) if (TP + FP) > 0 else 0.0
+    recall = TP / (TP + FN) if (TP + FN) > 0 else 0.0
+    f1_score = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+    iou = TP / (TP + FP + FN) if (TP + FP + FN) > 0 else 0.0
+    
+    # Global Metrics
+    accuracy = (TP + TN) / (TP + TN + FP + FN)
+    density = (np.sum(pred_bin) / np.sum(fov_mask)) * 100
+    
     return {
-        "Vascular_Density_%": round(vascular_density, 2),
-        "Pixel_Accuracy_%": round(accuracy, 2),
-        "Dice_Score": round(dice, 4),
-        "Sensitivity_%": round(sensitivity, 2)
+        'Vascular_Density_%': density,
+        'Pixel_Accuracy_%': accuracy * 100,
+        'Precision_%': precision * 100,
+        'Recall_%': recall * 100,      
+        'F1_Score': f1_score,          
+        'IoU_Score': iou
     }
 
 def run_engine():
@@ -169,18 +181,23 @@ def run_engine():
     final_df["Disease_Category"] = final_df["Disease_Category"].fillna("Other Retinal Pathology")
     final_df["Primary_Diagnosis"] = final_df["Primary_Diagnosis"].fillna("Clinical Fundus Scan")
 
+    # FIXED: Replaced Dice_Score and Sensitivity_% with the new dictionary keys
     cols = [
         "Patient_ID", "Disease_Category", "Vascular_Density_%",
-        "Pixel_Accuracy_%", "Dice_Score", "Sensitivity_%", "Primary_Diagnosis"
+        "Pixel_Accuracy_%", "Precision_%", "Recall_%", "F1_Score", "IoU_Score", "Primary_Diagnosis"
     ]
     final_df = final_df[[c for c in cols if c in final_df.columns]]
     final_df.to_csv("outputs/retinametrics_results.csv", index=False)
 
     print(final_df.drop(columns=["Primary_Diagnosis"]).to_string(index=False))
     print("\n--- Overall Performance Summary ---")
+    
+    # FIXED: Updated print statements to map perfectly to the new DataFrame columns
     print(f"Mean Pixel Accuracy : {final_df['Pixel_Accuracy_%'].mean():.2f}%")
-    print(f"Mean Dice Score     : {final_df['Dice_Score'].mean():.4f}")
-    print(f"Mean Sensitivity    : {final_df['Sensitivity_%'].mean():.2f}%")
+    print(f"Mean Precision      : {final_df['Precision_%'].mean():.2f}%")
+    print(f"Mean Recall         : {final_df['Recall_%'].mean():.2f}%")
+    print(f"Mean F1/Dice Score  : {final_df['F1_Score'].mean():.4f}")
+    print(f"Mean IoU Score      : {final_df['IoU_Score'].mean():.4f}")
     print(f"Mean Vessel Density : {final_df['Vascular_Density_%'].mean():.2f}%")
     print("Saved report to 'outputs/retinametrics_results.csv'")
 

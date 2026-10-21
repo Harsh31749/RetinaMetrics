@@ -147,10 +147,12 @@ with tab2:
         return ['background-color: #2b5c8f' if row['Patient_ID'] == selected_pid else '' for _ in row]
     
     styled_df = live_results_df.style.apply(highlight_selected, axis=1).format({
-        "Vascular_Density_%": "{:.2f}",
-        "Pixel_Accuracy_%": "{:.2f}",
-        "Dice_Score": "{:.2f}",
-        "Sensitivity_%": "{:.2f}"
+            "Vascular_Density_%": "{:.2f}",
+            "Pixel_Accuracy_%": "{:.2f}",
+            "Precision_%": "{:.2f}",
+            "Recall_%": "{:.2f}",
+            "F1_Score": "{:.4f}",
+            "IoU_Score": "{:.4f}"
     })
     
     st.dataframe(styled_df, use_container_width=True)
